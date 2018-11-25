@@ -65,7 +65,6 @@ extern void neo_exec_draw(int timeintv) {
     frame_clear(frame);
     for (i=0; i<NEO_SLOT; ++i) {
         if (neo_slot[i].valid) {
-            neo_printf("version = %d\n", neo_slot[i].version);
             switch (neo_slot[i].version) {
             case 1:
                 ret = neo_exec_v1_draw(i, timeintv);

@@ -37,6 +37,7 @@ static char* draw_frame_gradual(struct neo_color *frame, char* str) {  // 返回
     int last_pos, this_pos, k_pos;
     char *ptr, *ptr2;
     struct neo_color_uint last_color, this_color, mix_color;
+    neo_printf("%s\n", str);
     sscanf(str, "%d %u %u %u", &last_pos, &(last_color.r), &(last_color.g), &(last_color.b));
     fset(frame + last_pos, &last_color);
     ptr = strchr(str, '\n');
@@ -58,6 +59,15 @@ static char* draw_frame_gradual(struct neo_color *frame, char* str) {  // 返回
     return ptr+1;  // 下一行头指针
 }
 
+static void mask_frame(struct neo_color *f1, struct neo_color *f2, int mask, int mask_start, int mask_end) {
+    int i;
+    for (i=0; i<NEO_N; ++i) {
+        if (i >= mask_start && i <= mask_end) {
+            fadd(f1+i, f2+i, mask);
+        } else fadd(f1+i, f2+i, 128);  // 完整保留总的frame
+    }
+}
+
 int neo_exec_v1_draw(int slot, int timeintv) {
     struct neo_var_v1 *v;
     char *ptr;
@@ -66,6 +76,8 @@ int neo_exec_v1_draw(int slot, int timeintv) {
         if (v->head[1] == 'g') {  // gradual
             frame_clear(neo_slot[slot].frame1);  // 清空frame
             ptr = draw_frame_gradual(neo_slot[slot].frame1, v->head + 3);
+            mask_frame(frame, neo_slot[slot].frame1, v->mask, v->mask_start, v->mask_end);
+            v->head = ptr;
         } else {
             neo_printf("unknown sleep subtype\n"); return 1;
         }

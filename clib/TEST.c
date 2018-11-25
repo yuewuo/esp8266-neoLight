@@ -13,6 +13,8 @@ int main() {
     neo_exec_load(buf);
     neo_exec_draw(20);
     neo_exec_frame_dump(neo_slot[0].frame1);
+    neo_exec_draw(20);
+    neo_exec_frame_dump(neo_slot[0].frame1);
     // neo_exec_frame_dump(frame);
     close(fd);
 }
