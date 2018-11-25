@@ -1,7 +1,9 @@
 {
     "version": 1,
-    "z-index": 1000,
-    "alpha": 50,
+    "z_index": 1000,
+    "mask": 1,
+    "mask_start": 0,
+    "mask_end": 30,
     "procedure": [
         {
             "type": "frame",

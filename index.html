@@ -70,10 +70,22 @@
         }
     })(jQuery);
 
+    (function ($) {
+        $.htmlEscape = function (str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\n/g, '<br>');
+        }
+    })(jQuery);
+
     function check_number(number) { if (number < 1 || number > 1000) return false; return true; }
     function check_procedures(procedures) {  // 检查是否;分隔开的字符串
         let arr = procedures.split(';');
-        console.log(arr);
+        // console.log(arr);
         for (let i=0; i<arr.length; ++i) { if (arr[i].length < 1) return false; }
         return arr;
     }
@@ -108,8 +120,8 @@
                 neoPs[i] = result;
                 still_need -= 1;
                 if (still_need == 0) {
-                    // 先按z-index排序，顺序从小到大
-                    neoPs.sort(function(a, b) { return a['z-index'] - b['z-index']; });
+                    // 先按z_index排序，顺序从小到大
+                    neoPs.sort(function(a, b) { return a.z_index - b.z_index; });
                     initFrame();
                     drawFrame(false);
                 }
@@ -130,7 +142,7 @@
 
     function resizeNeoDOM() {
         let width = $("#h2title").width();
-        console.log(width);
+        // console.log(width);
         let linediv = $("#linediv");
         linediv.width(width);
         let lnw = width / neoN * 0.6;
@@ -141,10 +153,10 @@
         }
     }
 
-    function fadd(a, b) {
-        a[0] += b[0]
-        a[1] += b[1]
-        a[2] += b[2]
+    function fadd(a, b, mask=1) {
+        a[0] = b[0] + mask*a[0]
+        a[1] = b[1] + mask*a[1]
+        a[2] = b[2] + mask*a[2]
     }
 
     function mixcolor(c1, c2, mixer) {
@@ -166,14 +178,42 @@
 
     var time = 0;
     var framevar;
+    function mkframe() {
+        let frame = [];
+        for (let i=0; i<neoN; ++i) frame.push([0,0,0]);
+        return frame;
+    }
     function initFrame() {
         time = 0;
         $("#time").html(time);
         framevar = [];
         for (let i=0; i<neoPs.length; ++i) {
             framevar.push({
-                idx: 0
+                idx: 0,
+                sleep: 0,
+                frame1: mkframe(),  // 两个frame占的空间不大，但能极大节约CPU时间
+                frame2: mkframe(),
             })
+        }
+    }
+    function draw_frame_gradual(frame, p) {
+        let dat = p.data;
+        let last_pos = dat[0][0];
+        let last_color = dat[0].slice(1);
+        fadd(frame[last_pos], last_color);
+        for (let j=1; j<dat.length; ++j) {
+            let this_pos = dat[j][0];
+            let this_color = dat[j].slice(1);
+            for (let k_pos=last_pos+1; k_pos<=this_pos; ++k_pos) {
+                fadd(frame[k_pos], mixcolor(last_color, this_color, (k_pos-last_pos) / (this_pos-last_pos)));
+            }
+        }
+    }
+    function mask_frame(f1, f2, mask, mask_start, mask_end) {
+        for (let i=0; i<f1.length; ++i) {
+            if (i >= mask_start && i <= mask_end) {
+                fadd(f1[i], f2[i], mask)
+            } else fadd(f1[i], f2[i])
         }
     }
     function drawFrame(time_update=true) {
@@ -183,29 +223,29 @@
             $("#time").html(time);
         }
         // 构建一个完整的frame
-        let frame = [];
-        for (let i=0; i<neoN; ++i) frame.push([0,0,0]);
+        let frame = mkframe();
         // 寻找每一个frame
         for (let i=0; i<neoPs.length; ++i) {
             let va = framevar[i]
-            let p0 = neoPs[i].procedure[va.idx];
-            console.log(p0);
-            if (p0.type == "frame") {
-                let dat = p0.data;
-                let last_pos = dat[0][0];
-                let last_color = dat[0].slice(1);
-                fadd(frame[last_pos], last_color);
-                for (let j=1; j<dat.length; ++j) {
-                    let this_pos = dat[j][0];
-                    let this_color = dat[j].slice(1);
-                    for (let k_pos=last_pos+1; k_pos<=this_pos; ++k_pos) {
-                        fadd(frame[k_pos], mixcolor(last_color, this_color, (k_pos-last_pos) / (this_pos-last_pos)));
-                    }
+            let p = neoPs[i].procedure[va.idx];
+            if (p.type == "frame") {
+                va.sleep = 0;  // 复位睡眠时间
+                if (p.subtype == "gradual") {
+                    draw_frame_gradual(va.frame1, p);
+                    mask_frame(frame, va.frame1, neoPs[i].mask, neoPs[i].mask_start, neoPs[i].mask_end);
+                } else {
+                    alert("unrecognized subtype: " + $.htmlEscape(p.subtype));
                 }
+            } else if (p.type == "sleep") {
+                if (p.subtype == "gradual") {  // 通过时间的
+                    
+                }
+            } else {
+                alert("unrecognized type: " + $.htmlEscape(p.type));
             }
         }
         colorize(frame);
-        console.log(frame);
+        // console.log(frame);
         for (let i=0; i<frame.length; ++i) {
             let c = frame[i];
             $("#ln" + i).css("background-color", "rgb(" + c[0] +  "," + c[1] + "," + c[2] + ")");
