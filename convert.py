@@ -15,7 +15,7 @@ def converter_1(js):
             st += "fg:"
             for e in ele["data"]:
                 st += "%d %d %d %d;" % (e[0], e[1], e[2], e[3])
-            st += "\n"
+            st = st[:-1] + "\n"
         elif ele["type"] == "sleep" and ele["subtype"] == "gradual":
             st += "sg:%d\n" % ele["time"]
         elif ele["type"] == "sleep" and ele["subtype"] == "raw":
