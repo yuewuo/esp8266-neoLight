@@ -9,8 +9,7 @@ print("此脚本用来将JSON文件转换为字符串，方便C语言处理")
 """
 
 def converter_1(js):
-    st = "1\n"
-    st += "%d %d %d %d %d\n" % (js["z_index"], int(js["mask"] * 128), js["mask_start"], js["mask_end"], js["repeat"])  # mask 乘128方便右移实现
+    st = "%d %d %d %d %d\n" % (js["z_index"], int(js["mask"] * 128), js["mask_start"], js["mask_end"], js["repeat"])  # mask 乘128方便右移实现
     for ele in js["procedure"]:
         if ele["type"] == "frame" and ele["subtype"] == "gradual":
             st += "fg:"
@@ -29,10 +28,10 @@ with open(filename, 'r', encoding='utf-8') as f:
     print(js)
     print("版本为%d，使用converter_%d" % (js["version"], js["version"]))
     if js["version"] == 1:
-        st = converter_1(js)
+        st = "1 %s\n" % js["name"] + converter_1(js)
         print(st)
         print("长度为：%d，压缩率为%f%%" % (len(st), len(st) * 100 / len(str(js))))
         with open(filename + ".txt", 'wb') as fw:
-            fw.write(bytes(st, encoding="ascii"))
+            fw.write(bytes(st, encoding="utf-8"))
     else:
         print("版本%d不支持" % print(js["version"]))

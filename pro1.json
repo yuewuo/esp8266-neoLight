@@ -1,5 +1,7 @@
 {
     "version": 1,
+    "name": "测试样例1",
+    
     "z_index": 1000,
     "mask": 1,
     "mask_start": 0,
