@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <title>LeoLight开发</title>
+    <style>
+        body {
+            max-width: 1000px;
+            padding: 20px;
+            margin: 0 auto 0 auto;
+        }
+        .led {
+            position: absolute;
+            width: 10px;
+            height: 50px;
+            border-radius: 10px;
+            background-color: black;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>ESP8266-NeoLight开发者页面</h1><br>
+    <h2>一、使用说明</h2>
+    <strong>1. 演示模式</strong>
+    <p>通过加载若干个procedure JSON文件，显示他们的执行效果</p>
+    <strong>2. 编辑模式</strong>
+    <p>暂缓开发，后期提供给非代码人员，通过拖动和设置，来自定义灯光效果</p>
+    <div class="form-row">
+        <div class="form-group col-md-5">
+            <label for="input_number">灯珠个数</label>
+            <input type="number" class="form-control" id="input_number" placeholder="number" value="20">
+        </div>
+        <div class="form-group col-md-5">
+            <label for="input_procudures">加载文件（用;隔开）</label>
+            <input type="text" class="form-control" id="input_procudures" placeholder="procudures" value="pro1.json;pro2.json">
+        </div>
+        <div class="form-group col-md-2">
+            <button type="submit" class="btn btn-primary" style="height: 100%; width: 100%" onclick="gourl()">加载</button>
+        </div>
+    </div>
+    <p style="color: grey; font-size: 70%;">*本地调试tip：直接打开此html文件可能不会工作，受限于本地文件同源策略约束，请使用host.py文件运行小型web服务器后访问localhost:8080</p>
+    <h2 id="h2title">二、演示效果</h2>
+    <!-- <strong>基本信息：</strong>
+    <ul>
+        <li></li>
+    </ul> -->
+    <div id="linediv" style="position: relative; height: 50px;"></div>
+    <!-- <div id="circlediv"></div> -->
+    
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+
+    <script>
+
+    (function ($) {  // 给jquery拓展一个方法
+        $.getUrlParam = function (name) {
+            var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+            var r = window.location.search.substr(1).match(reg);
+            if (r != null) return unescape(r[2]); return null;
+        }
+    })(jQuery);
+
+    function check_number(number) { if (number < 1 || number > 1000) return false; return true; }
+    function check_procedures(procedures) {  // 检查是否;分隔开的字符串
+        let arr = procedures.split(';');
+        console.log(arr);
+        for (let i=0; i<arr.length; ++i) { if (arr[i].length < 1) return false; }
+        return arr;
+    }
+
+    function gourl() {
+        let number = $("#input_number").val();
+        let procudures = $("#input_procudures").val();
+        if (! check_number(number)) { alert("灯珠个数 输入格式错误"); return; }
+        if (! check_procedures(procudures)) { alert("procudures 输入格式错误"); return; }
+        window.location = "?number=" + encodeURI(number) + "&procudures=" + encodeURI(procudures);
+    }
+
+    var neoN;
+    var neoPs;
+    var still_need;
+    $(function() {
+        let number = $.getUrlParam("number");
+        if (! number) number = $("#input_number").val();
+        let procudures = $.getUrlParam("procudures");
+        if (! procudures) procudures = $("#input_procudures").val();
+        if (! check_number(number)) { alert("number 格式错误"); return; }
+        if (! check_procedures(procudures)) { alert("procudures 格式错误"); return; }
+        $("#input_number").val(number);
+        $("#input_procudures").val(procudures);
+        neoN = number;
+        let procedurelist = check_procedures(procudures);
+        still_need = procedurelist.length;
+        neoPs = new Array(still_need);
+        for (let i=0; i<procedurelist.length; ++i) {
+            $.get(procedurelist[i], function(result) {
+                console.log(result);
+                neoPs[i] = result;
+                still_need -= 1;
+                if (still_need == 0) {
+                    // 先按z-index排序，顺序从小到大
+                    neoPs.sort(function(a, b) { return a['z-index'] - b['z-index']; });
+                    drawFrame();
+                }
+            })
+        }
+        drawNeoDOM();
+        resizeNeoDOM();
+        window.onresize = resizeNeoDOM;
+    })
+
+    function drawNeoDOM() {
+        let linediv = $("#linediv");
+        linediv.children().remove();
+        for (let i=0; i<neoN; ++i) {
+            linediv.append($("<div class='led' id='ln" + i + "'></div>"));
+        }
+    }
+
+    function resizeNeoDOM() {
+        let width = $("#h2title").width();
+        console.log(width);
+        let linediv = $("#linediv");
+        linediv.width(width);
+        let lnw = width / neoN * 0.6;
+        for (let i=0; i<neoN; ++i) {
+            let ln = $("#ln" + i);
+            ln.css('left', i * width / neoN);
+            ln.width(lnw);
+        }
+    }
+
+    function fadd(a, b) {
+        a[0] += b[0]
+        a[1] += b[1]
+        a[2] += b[2]
+    }
+
+    function mixcolor(c1, c2, mixer) {
+        return [
+            c1[0] * (1-mixer) + c2[0] * mixer,
+            c1[1] * (1-mixer) + c2[1] * mixer,
+            c1[2] * (1-mixer) + c2[2] * mixer,
+        ]
+    }
+
+    function colorize(frame) {
+        for (let i=0; i<frame.length; ++i) {
+            for (let j=0; j<3; ++j) {
+                let int = parseInt(frame[i][j]);
+                frame[i][j] = int > 255 ? 255 : int;
+            }
+        }
+    }
+
+    function drawFrame() {
+        // 构建一个完整的frame
+        let frame = [];
+        for (let i=0; i<neoN; ++i) frame.push([0,0,0]);
+        // 寻找每一个frame
+        for (let i=0; i<neoPs.length; ++i) {
+            let p0 = neoPs[i].procedure[0];
+            console.log(p0);
+            if (p0.type == "frame") {
+                let dat = p0.data;
+                let last_pos = dat[0][0];
+                let last_color = dat[0].slice(1);
+                fadd(frame[last_pos], last_color);
+                for (let j=1; j<dat.length; ++j) {
+                    let this_pos = dat[j][0];
+                    let this_color = dat[j].slice(1);
+                    for (let k_pos=last_pos+1; k_pos<=this_pos; ++k_pos) {
+                        fadd(frame[k_pos], mixcolor(last_color, this_color, (k_pos-last_pos) / (this_pos-last_pos)));
+                    }
+                }
+            }
+        }
+        colorize(frame);
+        console.log(frame);
+        for (let i=0; i<frame.length; ++i) {
+            let c = frame[i];
+            $("#ln" + i).css("background-color", "rgb(" + c[0] +  "," + c[1] + "," + c[2] + ")");
+        }
+    }
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+    "version": 1,
+    "z-index": 200,
+    "alpha": 0,
+    "procedure": [
+        {
+            "type": "frame",
+            "subtype": "gradual",
+            "data": [
+                [50, 0, 0, 0],
+                [60, 255, 255, 255]
+            ]
+        }
+    ]
+}
