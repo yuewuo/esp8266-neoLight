@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>极客实验室走廊灯光设计</title>
+    <style>
+    body {
+        background-color: #FFF;
+        margin: 0;
+        overflow: hidden;
+    }
+    </style>
+</head>
+<body ontouchstart="">
+
+    <script src="js/jquery.min.js"></script>
+    <script src="js/jsrender.min.js"></script>
+    <script src="js/three.min.js"></script>
+    <script src="js/OrbitControls.js"></script>
+
+    <script>
+
+    var scene = new THREE.Scene();
+    scene.add(new THREE.AmbientLight(0xFFFFFF));
+    let centerpoint = new THREE.Object3D();
+    centerpoint.position.set(0, 0, 0);
+    let light = new THREE.DirectionalLight(0xFFFFFF, 1)
+    light.position.set(-5, 0, 0);
+    light.target = centerpoint;
+    scene.add(light);
+    var camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 0, 3.5);
+
+    var controls = new THREE.OrbitControls(camera)
+    // controls.enabled = false
+    controls.enablePan = false;
+    controls.minDistance = 0.1
+    controls.maxDistance = 100
+
+    // 场景
+    
+    var left_wall = new THREE.Mesh( new THREE.BoxGeometry( 0.2, 3, 3 ), new THREE.MeshLambertMaterial( {color: 0x00ff00} ) );
+    left_wall.position.set(-1, 0, 0);
+    scene.add( left_wall );
+    var right_wall = new THREE.Mesh( new THREE.BoxGeometry( 0.2, 3, 3 ), new THREE.MeshLambertMaterial( {color: 0x00ff00} ) );
+    right_wall.position.set(1, 0, 0);
+    scene.add( right_wall );
+    var squares = [];
+    for (let i=0; i<10; ++i) {
+        let cube = new THREE.Mesh( new THREE.BoxGeometry( 0.5, 0.2,  0.2), new THREE.MeshLambertMaterial( {color: 0x00ff00} ) );
+        cube.position.set(0, i * 0.2, - i * 0.2);
+        scene.add( cube );
+    }
+
+    // renderer
+
+    var renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.autoClear = false;
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+
+    function render() {
+        requestAnimationFrame(render);
+        renderer.render( scene, camera );
+    }
+    render();
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize( window.innerWidth, window.innerHeight );
+    }
+    window.addEventListener( 'resize', onWindowResize, false );
+
+    document.body.appendChild( renderer.domElement );
+
+    </script>
+    
+</body>
+</html>
