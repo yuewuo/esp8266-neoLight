@@ -20,6 +20,9 @@ struct neo_var_v1 {
     int mask_end;
     int repeat;
     char *head;
+    int sleep;
+    int tosleep;
+    char *nexthead;
 };
 extern int neo_exec_v1_init(int slot);
 extern int neo_exec_v1_draw(int slot, int timeintv);
