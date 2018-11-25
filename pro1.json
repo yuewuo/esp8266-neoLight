@@ -10,6 +10,19 @@
                 [0, 0, 0, 0],
                 [30, 255, 0, 0]
             ]
+        },
+        {
+            "type": "sleep",
+            "subtype": "gradual",
+            "time": 1000
+        },
+        {
+            "type": "frame",
+            "subtype": "gradual",
+            "data": [
+                [0, 255, 0, 0],
+                [30, 0, 0, 0]
+            ]
         }
     ]
 }

@@ -48,6 +48,12 @@
     <ul>
         <li></li>
     </ul> -->
+    <p>
+        当前时间：<strong id="time">0</strong>ms，
+        <button class="btn btn-primary" onclick="drawFrame()">下一帧（20ms）</button>&nbsp;
+        <button class="btn btn-success" disabled>连续运行（尚未开发）</button>
+        <button class="btn btn-danger" onclick="initFrame(); drawFrame(false)">时间复位</button>
+    </p>
     <div id="linediv" style="position: relative; height: 50px;"></div>
     <!-- <div id="circlediv"></div> -->
     
@@ -104,7 +110,8 @@
                 if (still_need == 0) {
                     // 先按z-index排序，顺序从小到大
                     neoPs.sort(function(a, b) { return a['z-index'] - b['z-index']; });
-                    drawFrame();
+                    initFrame();
+                    drawFrame(false);
                 }
             })
         }
@@ -157,13 +164,31 @@
         }
     }
 
-    function drawFrame() {
+    var time = 0;
+    var framevar;
+    function initFrame() {
+        time = 0;
+        $("#time").html(time);
+        framevar = [];
+        for (let i=0; i<neoPs.length; ++i) {
+            framevar.push({
+                idx: 0
+            })
+        }
+    }
+    function drawFrame(time_update=true) {
+        // 时间更新
+        if (time_update) {
+            time += 20;
+            $("#time").html(time);
+        }
         // 构建一个完整的frame
         let frame = [];
         for (let i=0; i<neoN; ++i) frame.push([0,0,0]);
         // 寻找每一个frame
         for (let i=0; i<neoPs.length; ++i) {
-            let p0 = neoPs[i].procedure[0];
+            let va = framevar[i]
+            let p0 = neoPs[i].procedure[va.idx];
             console.log(p0);
             if (p0.type == "frame") {
                 let dat = p0.data;
