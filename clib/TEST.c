@@ -11,6 +11,8 @@ int main() {
     read(fd, buf, sizeof(buf));
     // printf("%s", buf);
     neo_exec_load(buf);
+    neo_exec_draw();
+    neo_exec_frame_dump();
     close(fd);
 }
 

@@ -3,13 +3,16 @@
 struct neo_color frame[NEO_N];  // 记录当前一帧的信息
 struct neo_var neo_slot[NEO_SLOT];  // 记录每一个procedure的信息
 
+static void frame_clear(struct neo_color *frame) {
+    int i=0;
+    for (i=0; i<NEO_N; ++i) {
+        frame[i].r = frame[i].g = frame[i].b = 0;
+    }
+}
+
 void neo_exec_init() {
     int i;
-    for (i=0; i<NEO_N; ++i) {
-        frame[i].r = 0;
-        frame[i].g = 0;
-        frame[i].b = 0;
-    }
+    frame_clear(frame);
     for (i=0; i<NEO_SLOT; ++i) {
         neo_slot[i].valid = 0;
     }
@@ -51,4 +54,22 @@ void neo_exec_load(const char* str) {
             } else neo_printf("no more slot to put\n");
         } else neo_printf("version error %s %d\n", __FILE__, __LINE__);
     } else neo_printf("format error %s %d\n", __FILE__, __LINE__);
+}
+
+extern void neo_exec_draw() {
+    int i;
+    frame_clear(frame);
+    for (i=0; i<NEO_SLOT; ++i) {
+        switch (neo_slot[i].version) {
+        case 1:
+            neo_exec_v1_draw(i); break;
+        }
+    }
+}
+
+extern void neo_exec_frame_dump() {
+    int i=0;
+    for (i=0; i<NEO_N; ++i) {
+        neo_printf("%d: %d %d %d\n", i, frame[i].r, frame[i].g, frame[i].b);
+    }
 }

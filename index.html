@@ -120,8 +120,6 @@
                 neoPs[i] = result;
                 still_need -= 1;
                 if (still_need == 0) {
-                    // 先按z_index排序，顺序从小到大
-                    neoPs.sort(function(a, b) { return a.z_index - b.z_index; });
                     initFrame();
                     drawFrame(false);
                 }

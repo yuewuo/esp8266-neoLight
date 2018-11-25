@@ -9,7 +9,7 @@ print("此脚本用来将JSON文件转换为字符串，方便C语言处理")
 """
 
 def converter_1(js):
-    st = "%d %d %d %d %d\n" % (js["z_index"], int(js["mask"] * 128), js["mask_start"], js["mask_end"], js["repeat"])  # mask 乘128方便右移实现
+    st = "%d %d %d %d\n" % (int(js["mask"] * 128), js["mask_start"], js["mask_end"], js["repeat"])  # mask 乘128方便右移实现
     for ele in js["procedure"]:
         if ele["type"] == "frame" and ele["subtype"] == "gradual":
             st += "fg:"

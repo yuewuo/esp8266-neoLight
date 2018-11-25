@@ -2,7 +2,6 @@
     "version": 1,
     "name": "测试样例1",
     
-    "z_index": 200,
     "mask": 0.5,
     "mask_start": 50,
     "mask_end": 90,

@@ -14,9 +14,10 @@
 
 /* version 1 */
 struct neo_var_v1 {
-
+    
 };
 extern void neo_exec_v1_init(int slot);
+extern void neo_exec_v1_draw(int slot);
 
 /* general */
 
@@ -44,3 +45,5 @@ extern struct neo_color frame[NEO_N];
 extern void neo_exec_init();
 extern struct neo_var neo_slot[NEO_SLOT];
 extern void neo_exec_load(const char* str);
+extern void neo_exec_draw();
+extern void neo_exec_frame_dump();
