@@ -49,9 +49,9 @@
         <li></li>
     </ul> -->
     <p>
-        当前时间：<strong id="time">0</strong>ms，
-        <button class="btn btn-primary" onclick="drawFrame()">下一帧（20ms）</button>&nbsp;
-        <button class="btn btn-success" disabled>连续运行（尚未开发）</button>
+        当前时间：<strong id="time" style="width: 70px; display: inline-block;">0</strong>ms，
+        <button class="btn btn-primary" onclick="drawFrame()">下一帧</button>&nbsp;
+        <button class="btn btn-success" onclick="toggleRun()" id="btntogglerun">连续运行</button>&nbsp;
         <button class="btn btn-danger" onclick="initFrame(); drawFrame(false)">时间复位</button>
     </p>
     <div id="linediv" style="position: relative; height: 50px;"></div>
@@ -145,7 +145,7 @@
         // console.log(width);
         let linediv = $("#linediv");
         linediv.width(width);
-        let lnw = width / neoN * 0.6;
+        let lnw = width / neoN * 0.9;
         for (let i=0; i<neoN; ++i) {
             let ln = $("#ln" + i);
             ln.css('left', i * width / neoN);
@@ -178,6 +178,7 @@
 
     var time = 0;
     var framevar;
+    var timeintv = 20;  // ms
     function mkframe() {
         let frame = [];
         for (let i=0; i<neoN; ++i) frame.push([0,0,0]);
@@ -207,19 +208,27 @@
             for (let k_pos=last_pos+1; k_pos<=this_pos; ++k_pos) {
                 fadd(frame[k_pos], mixcolor(last_color, this_color, (k_pos-last_pos) / (this_pos-last_pos)));
             }
+            last_pos = this_pos;
+            last_color = this_color;
         }
     }
-    function mask_frame(f1, f2, mask, mask_start, mask_end) {
+    function mask_frame(f1, f2, mask, mask_start, mask_end, f3=null, mixer=null) {
         for (let i=0; i<f1.length; ++i) {
             if (i >= mask_start && i <= mask_end) {
-                fadd(f1[i], f2[i], mask)
-            } else fadd(f1[i], f2[i])
+                if (f3) {
+                    fadd(f1[i], mixcolor(f2[i], f3[i], mixer), mask)
+                } else fadd(f1[i], f2[i], mask)
+            } else {
+                if (f3) {
+                    fadd(f1[i], mixcolor(f2[i], f3[i], mixer))
+                } else fadd(f1[i], f2[i])
+            }
         }
     }
     function drawFrame(time_update=true) {
         // 时间更新
         if (time_update) {
-            time += 20;
+            time += timeintv;
             $("#time").html(time);
         }
         // 构建一个完整的frame
@@ -227,18 +236,48 @@
         // 寻找每一个frame
         for (let i=0; i<neoPs.length; ++i) {
             let va = framevar[i]
+            if (va.idx >= neoPs[i].procedure.length) {
+                if (neoPs[i].repeat) va.idx = 0;  // 可以重复
+                else continue;
+            }; 
             let p = neoPs[i].procedure[va.idx];
             if (p.type == "frame") {
-                va.sleep = 0;  // 复位睡眠时间
                 if (p.subtype == "gradual") {
+                    va.frame1 = mkframe();
                     draw_frame_gradual(va.frame1, p);
                     mask_frame(frame, va.frame1, neoPs[i].mask, neoPs[i].mask_start, neoPs[i].mask_end);
+                    va.idx += 1;
                 } else {
                     alert("unrecognized subtype: " + $.htmlEscape(p.subtype));
                 }
             } else if (p.type == "sleep") {
-                if (p.subtype == "gradual") {  // 通过时间的
-                    
+                if (p.subtype == "gradual") {
+                    if (va.sleep == 0) { // 需要先计算下一帧的状态
+                        let nidx = va.idx + 1;
+                        va.frame2 = mkframe();
+                        if (nidx < neoPs[i].procedure.length) {  // 否则认为是全黑
+                            let p2 = neoPs[i].procedure[nidx];
+                            if (p2.type == "frame") {
+                                if (p2.subtype == "gradual") {
+                                    draw_frame_gradual(va.frame2, p2);
+                                } else {
+                                    alert("next frame unrecognized subtype: " + $.htmlEscape(p2.subtype));
+                                }
+                            } else {
+                                alert("next frame unrecognized type: " + $.htmlEscape(p2.type));
+                            }
+                        }
+                    }
+                    va.sleep += timeintv;
+                    // 使用 va.frame1 和 va.frame2 组合出来新的frame
+                    mask_frame(frame, va.frame1, neoPs[i].mask, neoPs[i].mask_start, neoPs[i].mask_end, va.frame2, va.sleep / p.time);
+                    if (va.sleep + timeintv >= p.time) { va.idx += 1; va.sleep = 0; }
+                } else if (p.subtype == "raw") {
+                    va.sleep += timeintv;
+                    mask_frame(frame, va.frame1, neoPs[i].mask, neoPs[i].mask_start, neoPs[i].mask_end);
+                    if (va.sleep + timeintv >= p.time) { va.idx += 1; va.sleep = 0; }
+                } else {
+                    alert("unrecognized subtype: " + $.htmlEscape(p.subtype));
                 }
             } else {
                 alert("unrecognized type: " + $.htmlEscape(p.type));
@@ -249,6 +288,24 @@
         for (let i=0; i<frame.length; ++i) {
             let c = frame[i];
             $("#ln" + i).css("background-color", "rgb(" + c[0] +  "," + c[1] + "," + c[2] + ")");
+        }
+    }
+
+    var running = false;
+    setInterval(function() {
+        if (running) drawFrame();
+    }, timeintv);
+    function toggleRun() {
+        running = ! running;
+        let btn = $("#btntogglerun");
+        if (running) {
+            btn.removeClass("btn-success");
+            btn.addClass("btn-warning")
+            btn.html("暂停运行")
+        } else {
+            btn.removeClass("btn-warning")
+            btn.addClass("btn-success");
+            btn.html("连续运行")
         }
     }
 

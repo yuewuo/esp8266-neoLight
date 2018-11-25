@@ -3,14 +3,28 @@
     "z_index": 1000,
     "mask": 1,
     "mask_start": 0,
-    "mask_end": 30,
+    "mask_end": 40,
+    "repeat": true,
     "procedure": [
         {
             "type": "frame",
             "subtype": "gradual",
             "data": [
                 [0, 0, 0, 0],
-                [30, 255, 0, 0]
+                [40, 0, 0, 0]
+            ]
+        },
+        {
+            "type": "sleep",
+            "subtype": "gradual",
+            "time": 500
+        },
+        {
+            "type": "frame",
+            "subtype": "gradual",
+            "data": [
+                [0, 0, 0, 0],
+                [40, 255, 0, 0]
             ]
         },
         {
@@ -22,8 +36,21 @@
             "type": "frame",
             "subtype": "gradual",
             "data": [
-                [0, 255, 0, 0],
-                [30, 0, 0, 0]
+                [0, 255, 255, 0],
+                [40, 0, 0, 0]
+            ]
+        },
+        {
+            "type": "sleep",
+            "subtype": "gradual",
+            "time": 1000
+        },
+        {
+            "type": "frame",
+            "subtype": "gradual",
+            "data": [
+                [0, 0, 0, 0],
+                [40, 0, 0, 0]
             ]
         }
     ]
