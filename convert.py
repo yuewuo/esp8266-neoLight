@@ -8,13 +8,18 @@ print("此脚本用来将JSON文件转换为字符串，方便C语言处理")
 <version>
 """
 
+def hex8bit(rgb):
+    a = str(hex(rgb).replace('0x', '')).upper()
+    if len(a) < 2: a = '0' + a
+    return a
+
 def converter_1(js):
     st = "%d %d %d %d\n" % (int(js["mask"] * 128), js["mask_start"], js["mask_end"], js["repeat"])  # mask 乘128方便右移实现
     for ele in js["procedure"]:
         if ele["type"] == "frame" and ele["subtype"] == "gradual":
             st += "fg:"
             for e in ele["data"]:
-                st += "%d %d %d %d;" % (e[0], e[1], e[2], e[3])
+                st += "%d %s;" % (e[0], ''.join([hex8bit(rgb) for rgb in e[1:]]))
             st = st[:-1] + "\n"
         elif ele["type"] == "sleep" and ele["subtype"] == "gradual":
             st += "sg:%d\n" % ele["time"]

@@ -33,12 +33,20 @@ static void mixcolor(struct neo_color_uint *c, struct neo_color_uint *c1, struct
     c->b = ( (1024-mixer) * c1->b + mixer * c2->b ) / 1024;
 }
 
+static void hex2color(int hex, struct neo_color_uint *color) {
+    color->r = 0x00FF & (hex >> 16);
+    color->g = 0x00FF & (hex >> 8);
+    color->b = 0x00FF & hex;
+}
+
 static char* draw_frame_gradual(struct neo_color *frame, char* str) {  // 返回下一行的头指针
-    int last_pos, this_pos, k_pos;
+    int last_pos, this_pos, k_pos, hex;
     char *ptr, *ptr2;
     struct neo_color_uint last_color, this_color, mix_color;
     neo_printf("%s\n", str);
-    sscanf(str, "%d %u %u %u", &last_pos, &(last_color.r), &(last_color.g), &(last_color.b));
+    sscanf(str, "%d %x", &last_pos, &hex);
+    neo_printf("hex = %x\n", hex);
+    hex2color(hex, &last_color);
     fset(frame + last_pos, &last_color);
     ptr = strchr(str, '\n');
     if (ptr == NULL) return NULL;  // should not reach here
@@ -46,7 +54,8 @@ static char* draw_frame_gradual(struct neo_color *frame, char* str) {  // 返回
     ptr2 = strchr(str, ';');
     while (ptr2) {
         ptr2 += 1;  // 把;跳过去
-        sscanf(ptr2, "%d %u %u %u", &this_pos, &(this_color.r), &(this_color.g), &(this_color.b));
+        sscanf(ptr2, "%d %x", &this_pos, &hex);
+        hex2color(hex, &this_color);
         for (k_pos=last_pos+1; k_pos<=this_pos; ++k_pos) {
             mixcolor(&mix_color, &last_color, &this_color, (k_pos-last_pos) * 1024 / (this_pos-last_pos));
             fset(frame + k_pos, &mix_color);
