@@ -56,7 +56,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     neo_info(buf);
     mqtt.publish("iot/" AIO_USERNAME "/neo/info", buf);
   }
-  Serial.println(length);
+//  Serial.println(length);
 }
 
 void setup() {
@@ -95,14 +95,6 @@ void setup() {
   randomSeed(micros());
   Serial.print("Connecting to ");
   Serial.println(AIO_SERVER);
-
-//  Serial.println(millis());
-//  neo_exec_load(test1);
-//  Serial.print(test1);
-//  neo_exec_load(test1);
-//  neo_exec_load(test1);
-//  neo_exec_load(test1);
-//  neo_exec_load(test1);
 //
 //  Serial.println(millis());
 //  neo_exec_draw(TIME_INTV);
@@ -121,16 +113,14 @@ void loop() {
   }
   mqtt.loop();
   
-//  fidx += 1;
-//  ms = millis();
-//  todelay = TIME_INTV * fidx + startms - ms;
-//  sprintf(buf, "f(% 3d): sleep %d ms\n", fidx, todelay);
-//  Serial.print(buf);
-//  if (todelay > 0) delay(todelay);
-//  neo_exec_draw(TIME_INTV);
-//  show_frame(frame);
-  delay(1000);
-  Serial.print('*');
+  fidx += 1;
+  ms = millis();
+  todelay = TIME_INTV * fidx + startms - ms;
+  sprintf(buf, "% 3d: delay %d\n", fidx, todelay);
+  Serial.print(buf);
+  if (todelay > 0) delay(todelay);
+  neo_exec_draw(TIME_INTV);
+  show_frame(frame);
 }
 
 // Fill the dots one after the other with a color
