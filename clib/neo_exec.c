@@ -43,17 +43,19 @@ void neo_exec_load(const char* str) {
                     *ptr = '\0';
                     strcpy(neo_slot[i].name, ptr2 + 1);
                     neo_printf("procedure name is: \"%s\"\n", neo_slot[i].name);
-                    strcpy(neo_slot[i].str, ptr + 1);
-                    neo_slot[i].version = version;
-                    switch (version) {
-                    case 1:
-                        j = neo_exec_v1_init(i);
-                        if (j == 0) {
-                            neo_printf("procedure init success\n");
-                            neo_slot[i].valid = 1;
-                        } else neo_printf("procedure init failed with exit code %d\n", j);
-                        break;
-                    }
+                    if (strlen(ptr+1) < MAX_NEO_STR_LENGTH) {
+                        strcpy(neo_slot[i].str, ptr + 1);
+                        neo_slot[i].version = version;
+                        switch (version) {
+                        case 1:
+                            j = neo_exec_v1_init(i);
+                            if (j == 0) {
+                                neo_printf("procedure init success\n");
+                                neo_slot[i].valid = 1;
+                            } else neo_printf("procedure init failed with exit code %d\n", j);
+                            break;
+                        }
+                    } else neo_printf("procedure str too long %s %d\n", __FILE__, __LINE__);
                 } else neo_printf("procedure name error %s %d\n", __FILE__, __LINE__);
             } else neo_printf("no more slot to put\n");
         } else neo_printf("version error %s %d\n", __FILE__, __LINE__);
