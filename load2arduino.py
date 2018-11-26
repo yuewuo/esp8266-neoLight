@@ -22,12 +22,12 @@ if __name__ == '__main__':
     #     client.publish("iot/" + USERNAME + "/neo/add", f.read())
 
     client.publish("iot/" + USERNAME + "/neo/add", 
-        "1 default\64 0 10 0\n"
+        "1 default\n64 0 10 1\n"
         + "fg:0 000000;10 000000\n"
         + "sg:800\n"
-        + "fg:0 FF0000;10 0000FF\n"
+        + "fg:0 AAAA00;10 0000FF\n"
         + "sg:1500\n"
-        + "fg:0 00FF00;10 FF00FF\n"
+        + "fg:0 00FF00;10 FF0000\n"
         + "sg:800\n"
         + "fg:0 000000;10 000000\n"
     )
