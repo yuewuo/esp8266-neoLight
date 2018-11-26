@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include "svpng.inc"
+#include "svpng.linux_h"
 char buf[8192];
 #define TIME_INTV 20  // 20ms
 #define NUM_FRAME 100
