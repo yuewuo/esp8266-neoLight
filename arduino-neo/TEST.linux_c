@@ -48,6 +48,8 @@ int main() {
             buf[read(fd, buf, sizeof(buf))] = '\0';
             neo_exec_load(buf);
             close(fd);
+            neo_info(buf);
+            printf("%s", buf);
         }
 
         if (i == 30) {
@@ -62,6 +64,10 @@ int main() {
             buf[read(fd, buf, sizeof(buf))] = '\0';
             neo_exec_load(buf);
             close(fd);
+        }
+
+        if (i == 60) {
+            neo_exec_delete(2);
         }
 
         neo_exec_draw(TIME_INTV);

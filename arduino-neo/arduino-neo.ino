@@ -8,8 +8,7 @@
 
 #include <Adafruit_NeoPixel.h>
 #include <ESP8266WiFi.h>
-#include "Adafruit_MQTT.h"
-#include "Adafruit_MQTT_Client.h"
+#include "neo_PubSubClient.h"
 #include "neo_exec.h"
 #define TIME_INTV 20  // ms，每一帧的间隔
 
@@ -24,21 +23,47 @@
 #define NEO_PIN D1
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NEO_N, NEO_PIN, NEO_GRB + NEO_KHZ800);
-//WiFiClientSecure client;
 WiFiClient client;
-Adafruit_MQTT_Client mqtt(&client, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);
-Adafruit_MQTT_Publish mqtt_info = Adafruit_MQTT_Publish(&mqtt, "iot/" AIO_USERNAME "/info");
-Adafruit_MQTT_Subscribe mqtt_ask = Adafruit_MQTT_Subscribe(&mqtt, "iot/" AIO_USERNAME "/ask");
-void MQTT_connect();
+void callback(char* topic, byte* payload, unsigned int length);
+PubSubClient mqtt(AIO_SERVER, AIO_SERVERPORT, callback, client);
 
 const char* test1 = "1 default\n128 0 100 1\nfg:0 FF0000;10 0000FF;90 FF00FF\nsg:10000\nfg:0 FF0000;90 0000FF\n";
 int ms, fidx, startms, todelay;
+#define BUF_LEN 512
+char buf[BUF_LEN];
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.println(topic);
+  if (strcmp("iot/" AIO_USERNAME "/ask", topic) == 0) {
+    mqtt.publish("iot/" AIO_USERNAME "/info", "esp8266-neoLight, see https://github.com/wuyuepku/esp8266-neoLight\n"
+      "usage:\n"
+      "./neo/ask <null>:see the procedures in this machine\n"
+      "./neo/delete <num>: delete a procedure start from index 0\n"
+      "./neo/add <procedure> add a procedure using compiled string\n");
+  } else if (strcmp("iot/" AIO_USERNAME "/neo/add", topic) == 0) {  // 添加一个procedure，用./neo/add_ret返回
+    payload[length] = '\0';
+    sprintf(buf, "%d", neo_exec_load((const char*)payload));
+    mqtt.publish("iot/" AIO_USERNAME "/neo/add_ret", buf);
+  } else if (strcmp("iot/" AIO_USERNAME "/neo/delete", topic) == 0) {  // 强行delete一个procedure，用./neo/delete_ret返回
+    int slot2delete;
+    if (length < 10) {
+      payload[length] = '\0';
+      sscanf((const char*)payload, "%d", &slot2delete);
+      neo_exec_delete(slot2delete);
+      mqtt.publish("iot/" AIO_USERNAME "/neo/delete_ret", "0");
+    } else mqtt.publish("iot/" AIO_USERNAME "/neo/delete_ret", "-1");
+  } else if (strcmp("iot/" AIO_USERNAME "/neo/ask", topic) == 0) {
+    neo_info(buf);
+    mqtt.publish("iot/" AIO_USERNAME "/neo/info", buf);
+  }
+  Serial.println(length);
+}
 
 void setup() {
 
   Serial.begin(115200);
   delay(100);
-  Serial.println("esp8266-neoLight with MQTTs support");
+  Serial.println("esp8266-neoLight with MQTT support");
 
   // 连接WIFI
   pinMode(LED_BUILTIN, OUTPUT);
@@ -59,59 +84,43 @@ void setup() {
   delay(500);
   Serial.println("WiFi connected");
   Serial.println("IP address: "); Serial.println(WiFi.localIP());
-
-  // 连接MQTTs
-  Serial.print("Connecting to ");
-  Serial.println(AIO_SERVER);
-  if (! client.connect(AIO_SERVER, AIO_SERVERPORT)) {
-    Serial.println("Connection failed. Halting execution.");
-    while(1) { delay(200); digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); }
-  }
-  digitalWrite(LED_BUILTIN, LOW);  // 这个状态是LED点亮
-  mqtt.subscribe(&mqtt_ask);
   
-  // End of trinket special code
-  // strip.setBrightness(BRIGHTNESS);
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
 
   // initialize neo_exec
   neo_exec_init();
 
-  Serial.println(millis());
-  neo_exec_load(test1);
-  Serial.print(test1);
-  neo_exec_load(test1);
-  neo_exec_load(test1);
-  neo_exec_load(test1);
-  neo_exec_load(test1);
+  // 连接MQTTs
+  randomSeed(micros());
+  Serial.print("Connecting to ");
+  Serial.println(AIO_SERVER);
 
-  Serial.println(millis());
-  neo_exec_draw(TIME_INTV);
-
-  Serial.println(millis());
-  show_frame(frame);
+//  Serial.println(millis());
+//  neo_exec_load(test1);
+//  Serial.print(test1);
+//  neo_exec_load(test1);
+//  neo_exec_load(test1);
+//  neo_exec_load(test1);
+//  neo_exec_load(test1);
+//
+//  Serial.println(millis());
+//  neo_exec_draw(TIME_INTV);
+//
+//  Serial.println(millis());
+//  show_frame(frame);
   
   Serial.println(millis());
   startms = millis();
   fidx = 0;
 }
 
-char buf[256];
-Adafruit_MQTT_Subscribe *subscription;
 void loop() {
-  MQTT_connect();
-  while ((subscription = mqtt.readSubscription(10))) {  // 只给10ms的时间去读取，不然就返回
-    if (subscription == &mqtt_ask) {
-      Serial.print(F("Got: "));
-      Serial.println((char *)mqtt_ask.lastread);
-      if (! mqtt_info.publish("hello from esp8266")) {
-        Serial.println(F("Failed"));
-      } else {
-        Serial.println(F("OK!"));
-      }
-    }
+  if (!mqtt.connected()) {
+    reconnect();
   }
+  mqtt.loop();
+  
 //  fidx += 1;
 //  ms = millis();
 //  todelay = TIME_INTV * fidx + startms - ms;
@@ -140,31 +149,28 @@ void show_frame(struct neo_color *frame) {
   strip.show();
 }
 
-// Function to connect and reconnect as necessary to the MQTT server.
-// Should be called in the loop function and it will take care if connecting.
-void MQTT_connect() {
-  int8_t ret;
-
-  // Stop if already connected.
-  if (mqtt.connected()) {
-    return;
+void reconnect() {
+  while (!mqtt.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    // Create a random client ID
+    String clientId = "ESP8266Client-";
+    clientId += String(random(0xffff), HEX);
+    // Attempt to connect
+    if (mqtt.connect(clientId.c_str(), AIO_USERNAME, AIO_KEY, "iot/" AIO_USERNAME "/offline", 0, 0, "esp82660-neoLight")) {
+      Serial.println("connected");
+      mqtt.subscribe("iot/" AIO_USERNAME "/ask");
+      mqtt.subscribe("iot/" AIO_USERNAME "/neo/ask");
+      mqtt.subscribe("iot/" AIO_USERNAME "/neo/delete");
+      mqtt.subscribe("iot/" AIO_USERNAME "/neo/add");
+      mqtt.publish("iot/" AIO_USERNAME "/online","esp82660-neoLight");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(mqtt.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      delay(5000); digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    }
   }
-
-  Serial.print("Connecting to MQTT... ");
-
-  uint8_t retries = 3;
-  while ((ret = mqtt.connect()) != 0) { // connect will return 0 for connected
-       Serial.println(mqtt.connectErrorString(ret));
-       Serial.println("Retrying MQTT connection in 5 seconds...");
-       mqtt.disconnect();
-       delay(5000);  // wait 5 seconds
-       retries--;
-       if (retries == 0) {
-         // basically die and wait for WDT to reset me
-         while(1) { delay(200); digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); }
-       }
-  }
-
-  Serial.println("MQTT Connected!");
 }
+
 

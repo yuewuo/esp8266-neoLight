@@ -25,7 +25,7 @@ static int find_valid_slot() {
     return -1;
 }
 
-void neo_exec_load(const char* str) {
+int neo_exec_load(const char* str) {
     int i, version, j;
     char *ptr, *ptr2;
     sscanf(str, "%d", &version);
@@ -53,17 +53,18 @@ void neo_exec_load(const char* str) {
                             if (j == 0) {
                                 neo_printf("procedure init success\n");
                                 neo_slot[i].valid = 1;
-                            } else neo_printf("procedure init failed with exit code %d\n", j);
+                            } else { neo_printf("procedure init failed with exit code %d\n", j); return j; }
                             break;
                         }
-                    } else neo_printf("procedure str too long %s %d\n", __FILE__, __LINE__);
-                } else neo_printf("procedure name error %s %d\n", __FILE__, __LINE__);
-            } else neo_printf("no more slot to put\n");
-        } else neo_printf("version error %s %d\n", __FILE__, __LINE__);
-    } else neo_printf("format error %s %d\n", __FILE__, __LINE__);
+                    } else { neo_printf("procedure str too long %s %d\n", __FILE__, __LINE__); return -3; }
+                } else { neo_printf("procedure name error %s %d\n", __FILE__, __LINE__); return -4; }
+            } else { neo_printf("no more slot to put\n"); return -5; }
+        } else { neo_printf("version error %s %d\n", __FILE__, __LINE__); return -6; }
+    } else { neo_printf("format error %s %d\n", __FILE__, __LINE__); return -7; }
+    return 0;
 }
 
-extern void neo_exec_draw(int timeintv) {
+void neo_exec_draw(int timeintv) {
     int i, ret;
     frame_clear(frame);
     for (i=0; i<NEO_SLOT; ++i) {
@@ -81,9 +82,24 @@ extern void neo_exec_draw(int timeintv) {
     }
 }
 
-extern void neo_exec_frame_dump(struct neo_color *frame) {
+void neo_exec_frame_dump(struct neo_color *frame) {
     int i=0;
     for (i=0; i<NEO_N; ++i) {
         neo_printf("%d: %d %d %d\n", i, frame[i].r, frame[i].g, frame[i].b);
+    }
+}
+
+void neo_info(char* buf) {
+    int i=0;
+    for (i=0; i<NEO_SLOT; ++i) {
+        if (neo_slot[i].valid) {
+            buf += sprintf(buf, "%d %d %s\n", (int)neo_slot[i].valid, neo_slot[i].version, neo_slot[i].name);
+        } else buf += sprintf(buf, "0\n");
+    }
+}
+
+void neo_exec_delete(int slot) {
+    if (slot >= 0 && slot < NEO_SLOT) {
+        neo_slot[slot].valid = 0;
     }
 }

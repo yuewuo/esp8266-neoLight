@@ -5,7 +5,7 @@ extern "C" {
 /* general */
 #include "stdio.h"
 #include "string.h"
-#define MAX_NEO_STR_LENGTH 1000
+#define MAX_NEO_STR_LENGTH 2048
 #define NEO_N 100  // WS2812灯珠的个数，这个是编译时必需确定的
 #define NEO_SLOT 5  // 最多存储的procedure个数
 #define NEO_PRINTF 1
@@ -64,10 +64,12 @@ struct neo_var {
 extern struct neo_color frame[NEO_N];
 extern void neo_exec_init();
 extern struct neo_var neo_slot[NEO_SLOT];
-extern void neo_exec_load(const char* str);
+extern int neo_exec_load(const char* str);
 extern void neo_exec_draw(int timeintv);
 extern void neo_exec_frame_dump();
 extern void frame_clear(struct neo_color *frame);
+extern void neo_info(char* buf);
+extern void neo_exec_delete(int slot);
 
 #ifdef __cplusplus
 }
