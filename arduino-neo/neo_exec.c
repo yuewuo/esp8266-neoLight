@@ -42,6 +42,7 @@ void neo_exec_load(const char* str) {
                 if (ptr2 != NULL && ptr - ptr2 < NEO_NAME_LENGTH - 2) {
                     *ptr = '\0';
                     strcpy(neo_slot[i].name, ptr2 + 1);
+                    *ptr = '\n';
                     neo_printf("procedure name is: \"%s\"\n", neo_slot[i].name);
                     if (strlen(ptr+1) < MAX_NEO_STR_LENGTH) {
                         strcpy(neo_slot[i].str, ptr + 1);

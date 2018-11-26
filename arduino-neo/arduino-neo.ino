@@ -6,7 +6,7 @@
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NEO_N, NEO_PIN, NEO_GRB + NEO_KHZ800);
 
-const char* test1 = "1 testcase1\n128 0 100 1\nfg:0 FF0000;10 0000FF;90 FF00FF\nsg:10000\n0 FF0000;90 0000FF\n";
+const char* test1 = "1 testcase1\n128 0 100 1\nfg:0 FF0000;10 0000FF;90 FF00FF\nsg:10000\nfg:0 FF0000;90 0000FF\n";
 int ms, fidx, startms, todelay;
 
 void setup() {
@@ -22,6 +22,11 @@ void setup() {
   neo_exec_init();
 
   Serial.println(millis());
+  neo_exec_load(test1);
+  Serial.print(test1);
+  neo_exec_load(test1);
+  neo_exec_load(test1);
+  neo_exec_load(test1);
   neo_exec_load(test1);
 
   Serial.println(millis());
