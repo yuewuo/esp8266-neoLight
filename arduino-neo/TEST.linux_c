@@ -6,7 +6,7 @@
 #include "svpng.linux_h"
 char buf[8192];
 #define TIME_INTV 20  // 20ms
-#define NUM_FRAME 100
+#define NUM_FRAME 200
 #define UPSAMPLE 10
 unsigned char rgb[NUM_FRAME * NEO_N * 3 * UPSAMPLE * UPSAMPLE], *p;
 

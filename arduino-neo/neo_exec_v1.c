@@ -8,7 +8,7 @@ int neo_exec_v1_init(int slot) {
     sscanf(str, "%d %d %d %d", &(v->mask), &(v->mask_start), &(v->mask_end), &(v->repeat));
     ptr = strchr(str, '\n');
     if (!ptr) { neo_printf("format error %s %d\n", __FILE__, __LINE__); return 1; }
-    v->head = ptr + 1;  // 把\n空过去
+    v->orihead = v->head = ptr + 1;  // 把\n空过去
     v->sleep = 0;  // 初始化睡眠计时
     return 0;
 }
@@ -144,7 +144,11 @@ int neo_exec_v1_draw(int slot, int timeintv) {
             neo_printf("unknown sleep subtype\n"); return 2;
         }
     } else if (v->head[0] == '\0') {
-        neo_printf("procedure done\n"); return -1;
+        if (v->repeat) {
+            // neo_printf("DEBUG:st repeat = %d\n", v->repeat);
+            if (v->repeat > 0) --v->repeat;
+            v->head = v->orihead;
+        } else { neo_printf("procedure done\n"); return -1; }
     } else {
         // neo_printf("%s\n", v->head);
         neo_printf("unknown type\n"); return 3;

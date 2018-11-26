@@ -24,6 +24,7 @@ struct neo_var_v1 {
     int mask_end;
     int repeat;
     char *head;
+    char *orihead;
     int sleep;
     int tosleep;
     char *nexthead;

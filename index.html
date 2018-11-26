@@ -190,6 +190,7 @@
             framevar.push({
                 idx: 0,
                 sleep: 0,
+                repeat: 0,
                 frame1: mkframe(),  // 两个frame占的空间不大，但能极大节约CPU时间
                 frame2: mkframe(),
             })
@@ -235,7 +236,10 @@
         for (let i=0; i<neoPs.length; ++i) {
             let va = framevar[i]
             if (va.idx >= neoPs[i].procedure.length) {
-                if (neoPs[i].repeat) va.idx = 0;  // 可以重复
+                if (neoPs[i].repeat < 0 || va.repeat < neoPs[i].repeat) {  // 可以重复
+                    va.repeat += 1;
+                    va.idx = 0;
+                }
                 else continue;
             }; 
             let p = neoPs[i].procedure[va.idx];

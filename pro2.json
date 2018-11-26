@@ -5,7 +5,7 @@
     "mask": 0.5,
     "mask_start": 50,
     "mask_end": 90,
-    "repeat": true,
+    "repeat": -1,
     "procedure": [
         {
             "type": "frame",
