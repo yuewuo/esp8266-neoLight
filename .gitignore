@@ -1,3 +1,4 @@
 *.json.txt
 arduino-neo/TEST
 arduino-neo/rgb.png
+.vscode
