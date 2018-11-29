@@ -11,22 +11,10 @@
 #include "neo_PubSubClient.h"
 #include "neo_exec.h"
 #include <Adafruit_NeoPixel.h>
-//#include "ws2812_i2s.h"
-//#include <FastLED.h>
-#ifdef ESP8266  // esp8266
 #include <ESP8266WiFi.h>
 #include <interrupts.h>
+
 #define NEO_PIN D1
-#endif
-#ifdef ESP32  // esp32
-#include <WiFi.h>
-//#include "esp32_ws2812.h"
-//rgbVal leds[NEO_N];
-//#include "esp32_digital_led_lib.h"
-#define NEO_PIN 17
-//strand_t pStrand = {.rmtChannel = 0, .gpioNum = NEO_PIN, .ledType = LED_WS2812B_V3, .brightLimit = 32, .numPixels = NEO_N,
-//   .pixels = nullptr, ._stateVars = nullptr};
-#endif
 #define TIME_INTV 20  // ms，每一帧的间隔
 
 #define WLAN_SSID       "geeklab"
@@ -37,11 +25,7 @@
 #define AIO_USERNAME    "sVyd16qv"
 #define AIO_KEY         "iIJQUrn5SkwpaCqG4omyW3Tb6z7RPvBY"
 
-
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NEO_N, NEO_PIN, NEO_GRB + NEO_KHZ800);
-//static WS2812 ledstrip;
-//static Pixel_t pixels[NEO_N];
-//CRGB leds[NEO_N];
 WiFiClient client;
 void callback(char* topic, byte* payload, unsigned int length);
 PubSubClient mqtt(AIO_SERVER, AIO_SERVERPORT, callback, client);
@@ -112,29 +96,6 @@ void setup() {
     InterruptLock lock; 
     strip.show();
   }
-//  ledstrip.init(NEO_N);
-//  for (uint16_t i=0; i<NEO_N; i++) { pixels[i].R = 0; pixels[i].G = 255; pixels[i].B = 0; }
-//  ledstrip.show(pixels);
-//  FastLED.addLeds<NEOPIXEL, NEO_PIN>(leds, NEO_N);
-//  leds[0] = CRGB::Red;
-//  leds[1] = CRGB::Green;
-//  leds[2] = CRGB::Blue;
-//  FastLED.show(); 
-//  ws2812_init(NEO_PIN, LED_WS2812B);
-//  leds[0].r = 255;
-//  leds[1].g = 255;
-//  leds[2].b = 255;
-//  ws2812_setColors(NEO_N, leds);
-//  if (digitalLeds_initStrands(&pStrand, 1)) {
-//    Serial.println("Init FAILURE: halting");
-//    while (true) {};
-//  }
-//  digitalLeds_resetPixels(&pStrand);
-//  delay(30);
-//  pStrand.pixels[0] = pixelFromRGB(55, 55, 0);
-//  digitalLeds_updatePixels(&pStrand);
-//  while (1)delay(10);
-//  delay(10);
 
   // initialize neo_exec
   neo_exec_init();
@@ -176,18 +137,11 @@ void loop() {
 void show_frame(struct neo_color *frame) {
   for(uint16_t i=0; i<NEO_N; i++) {
     strip.setPixelColor(i, frame[i].r, frame[i].g, frame[i].b);
-//    pixels[i].R = frame[i].b; pixels[i].G = frame[i].r; pixels[i].B = frame[i].g;
-//    pixels[i].R = frame[i].r; pixels[i].G = frame[i].g; pixels[i].B = frame[i].b;
-//    pStrand.pixels[i].r = frame[i].r;
-//    pStrand.pixels[i].g = frame[i].g;
-//    pStrand.pixels[i].b = frame[i].b;
   }
   {
     InterruptLock lock; 
     strip.show();
   }
-//  ledstrip.show(pixels);
-//  digitalLeds_updatePixels(&pStrand);
 }
 
 void reconnect() {
