@@ -148,6 +148,7 @@ int neo_exec_v1_draw(int slot, int timeintv) {
             // neo_printf("DEBUG:st repeat = %d\n", v->repeat);
             if (v->repeat > 0) --v->repeat;
             v->head = v->orihead;
+            return neo_exec_v1_draw(slot, timeintv);
         } else { neo_printf("procedure done\n"); return -1; }
     } else {
         // neo_printf("%s\n", v->head);

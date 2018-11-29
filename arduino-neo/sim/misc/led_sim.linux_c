@@ -1,0 +1,161 @@
+#include <stdio.h>
+#include "neo_exec.h"
+#include <stdlib.h>
+#include <memory.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include "svpng.linux_h"
+char buf[8192];
+
+#ifndef TIME_INTV
+#define TIME_INTV 20  // 20ms
+#endif
+
+#ifndef NUM_FRAME
+#define NUM_FRAME 200
+#endif
+
+#ifndef UPSAMPLE
+#define UPSAMPLE 10
+#endif
+
+#ifndef NEO_SLOT
+#define NEO_SLOT 5
+#endif
+
+#ifndef MAX_PROGRESS
+#define MAX_PROGRESS 64
+#endif
+
+unsigned char rgb[NUM_FRAME * NEO_N * 3 * UPSAMPLE * UPSAMPLE], *p_rgb;
+
+void draw_a_frame(struct neo_color *frame) {
+    int i,j,k;
+    for (j=0; j<UPSAMPLE; ++j) {
+        for (i=0; i<NEO_N; ++i) {
+            for (k=0; k<UPSAMPLE; ++k) {
+                *p_rgb++ = frame[i].r;
+                *p_rgb++ = frame[i].g;
+                *p_rgb++ = frame[i].b;
+            }
+        }
+    }
+}
+
+void draw_white_lines() {
+    int i,j,k;
+    for (i=0; i<NUM_FRAME; ++i) {
+        for (j=0; j<UPSAMPLE*NEO_N; ++j) {
+            k = 3 * (UPSAMPLE*NEO_N*i*UPSAMPLE + j);
+            rgb[k] = rgb[k+1] = rgb[k+2] = 255;
+        }
+    }
+}
+
+struct Progress {
+    char filename[64];
+    int start_frame, end_frame;
+    int slot;
+}; 
+
+int valid_slots[NEO_SLOT];
+
+int getValidSlot() {
+    for(int i = 0;i < NEO_SLOT;++i) {
+        if(valid_slots[i])
+            return i;
+    }
+    return -1;
+}
+
+int main(int argc, char** argv) {
+    int fd;
+    struct Progress *p[MAX_PROGRESS];
+    char filename[64];
+    int start_frame, end_frame;
+
+
+    for(int c = 1;c < argc;++c) {
+        int p_cnt = 0;
+        printf("\n===========%s==========\n\n", argv[c]);
+        FILE *test_input = fopen(argv[c], "r");
+
+        if(!test_input) {
+            printf("Error: fail to open file %s\n", argv[c]);
+            continue;
+        }
+
+        for(int k = 0;k < NEO_SLOT;++k) {
+            valid_slots[k] = 1;
+        }
+
+        // 初始化PNG输出
+        p_rgb = rgb;
+        memset(rgb, 0, sizeof(rgb));
+        char filename_buf[64];
+        strcpy(filename_buf, argv[c]);
+        FILE *fp = fopen(strcat(filename_buf, "_output.png"), "wb");
+
+        if(!fp) {
+            printf("Error: can not open file %s\n", filename_buf);
+            continue;
+        }
+
+        neo_exec_init();
+        
+        while(!feof(test_input)) {
+            fscanf(test_input, "%s %d %d\n", filename, &start_frame, &end_frame);
+            p[p_cnt] = malloc(sizeof(struct Progress));
+            p[p_cnt]->start_frame = start_frame;
+            p[p_cnt]->end_frame = end_frame;
+            strcpy(p[p_cnt]->filename, filename);
+            p_cnt++;
+        }
+        for(int time = 0;time < NUM_FRAME;++time) {
+            for(int i = 0;i < p_cnt;++i) {
+                if(p[i]->start_frame == time) {
+                    int slot = getValidSlot();
+                    if(slot < 0) {
+                        printf("Error: run out of slot\n\n");
+                        p[i]->slot = -1;
+                    } else {
+                        fd = open(p[i]->filename, O_RDONLY);
+                        if(fd < 0) {
+                            printf("Error: fail to open file %s\n\n", p[i]->filename);
+                        }
+                        buf[read(fd, buf, sizeof(buf))] = '\0';
+                        close(fd);
+                        printf("-----load %s:-----\n", p[i]->filename);
+                        if(neo_exec_load(buf) == 0) { //加载成功
+                            valid_slots[slot] = 0; 
+                            p[i]->slot = slot;
+                            printf("---success! loaded at slot %d---\n\n", slot);
+                        } else {
+                            p[i]->slot = -1;
+                            printf("------------failed!------------\n\n");
+                        }
+                        neo_info(buf);
+                    }
+                }
+                if(p[i]->end_frame == time) {
+                    if(p[i]->slot >= 0) {
+                        neo_exec_delete(p[i]->slot);
+                        valid_slots[p[i]->slot] = 1;
+                        printf("---deleted %s at slot %d---\n\n", p[i]->filename, p[i]->slot);
+                    }
+                }
+            }
+            neo_exec_draw(TIME_INTV);
+            draw_a_frame(frame);
+        }
+        draw_white_lines();
+        svpng(fp, NEO_N * UPSAMPLE, NUM_FRAME * UPSAMPLE, rgb, 0);
+        fclose(fp);
+        for(int i = 0;i < p_cnt;++i) {
+            free(p[i]);
+        }
+        fclose(test_input);
+    }
+}
+

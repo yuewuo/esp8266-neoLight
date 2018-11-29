@@ -1,3 +1,5 @@
 *.json.txt
+*.ledout
 arduino-neo/TEST
 arduino-neo/rgb.png
+.vscode

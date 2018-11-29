@@ -235,8 +235,11 @@
         // 寻找每一个frame
         for (let i=0; i<neoPs.length; ++i) {
             let va = framevar[i]
+            let canRepeat = () => {
+                return neoPs[i].repeat < 0 || va.repeat < neoPs[i].repeat;
+            }
             if (va.idx >= neoPs[i].procedure.length) {
-                if (neoPs[i].repeat < 0 || va.repeat < neoPs[i].repeat) {  // 可以重复
+                if (canRepeat()) {  // 可以重复
                     va.repeat += 1;
                     va.idx = 0;
                 }
@@ -257,7 +260,10 @@
                     if (va.sleep == 0) { // 需要先计算下一帧的状态
                         let nidx = va.idx + 1;
                         va.frame2 = mkframe();
-                        if (nidx < neoPs[i].procedure.length) {  // 否则认为是全黑
+                        if (nidx < neoPs[i].procedure.length || (nidx == neoPs[i].procedure.length && canRepeat())) {  // 否则认为是全黑
+                            if(nidx == neoPs[i].procedure.length) {
+                                nidx = 0;   //若循环则下帧为第0帧
+                            }
                             let p2 = neoPs[i].procedure[nidx];
                             if (p2.type == "frame") {
                                 if (p2.subtype == "gradual") {
