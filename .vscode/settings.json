@@ -1,6 +1,8 @@
 {
     "files.associations": {
+        "*.linux_c": "c",
         "*.inc": "c",
-        "*.linux_h": "c"
+        "*.linux_h": "c",
+        "ws2812_dma.h": "c"
     }
 }

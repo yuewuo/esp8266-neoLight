@@ -6,8 +6,16 @@
  *    之后每收到一条信息，LED将变换状态（从亮变暗，或，从暗变亮，不一定）
  */
 
-#include <Adafruit_NeoPixel.h>
+#define DEBUG_NO_WIFI_ONLY_LED
+
+//#include <Adafruit_NeoPixel.h>
+#include "ws2812_i2s.h"
+#ifdef ESP8266  // esp8266
 #include <ESP8266WiFi.h>
+#endif
+#ifdef ESP32  // esp32
+#include <WiFi.h>
+#endif
 #include "neo_PubSubClient.h"
 #include "neo_exec.h"
 #define TIME_INTV 20  // ms，每一帧的间隔
@@ -20,14 +28,21 @@
 #define AIO_USERNAME    "sVyd16qv"
 #define AIO_KEY         "iIJQUrn5SkwpaCqG4omyW3Tb6z7RPvBY"
 
-#define NEO_PIN D1
+#ifdef ESP8266
+#define NEO_PIN D1  // esp8266
+#endif
+#ifdef ESP32
+#define NEO_PIN 17
+#endif
 
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(NEO_N, NEO_PIN, NEO_GRB + NEO_KHZ800);
+//Adafruit_NeoPixel strip = Adafruit_NeoPixel(NEO_N, NEO_PIN, NEO_GRB + NEO_KHZ800);
+static WS2812 ledstrip;
+static Pixel_t pixels[NEO_N];
 WiFiClient client;
 void callback(char* topic, byte* payload, unsigned int length);
 PubSubClient mqtt(AIO_SERVER, AIO_SERVERPORT, callback, client);
 
-const char* test1 = "1 default\n128 0 100 1\nfg:0 FF0000;10 0000FF;90 FF00FF\nsg:10000\nfg:0 FF0000;90 0000FF\n";
+const char* test1 = "1 default\n255 0 13 -1\nfg:0 FF0000;5 0000FF;13 FF00FF\nsg:5000\nfg:0 0000FF;13 0000FF\n";
 int ms, fidx, startms, todelay;
 #define BUF_LEN 512
 char buf[BUF_LEN];
@@ -65,6 +80,7 @@ void setup() {
   delay(100);
   Serial.println("esp8266-neoLight with MQTT support");
 
+#ifndef DEBUG_NO_WIFI_ONLY_LED
   // 连接WIFI
   pinMode(LED_BUILTIN, OUTPUT);
   Serial.println(); Serial.println();
@@ -84,23 +100,28 @@ void setup() {
   delay(500);
   Serial.println("WiFi connected");
   Serial.println("IP address: "); Serial.println(WiFi.localIP());
+#endif
   
-  strip.begin();
-  strip.show(); // Initialize all pixels to 'off'
+//  strip.begin();
+//  strip.show(); // Initialize all pixels to 'off'
+  ledstrip.init(NEO_N);
+  for (uint16_t i=0; i<NEO_N; i++) { pixels[i].R = 0; pixels[i].G = 255; pixels[i].B = 0; }
+  ledstrip.show(pixels);
+  while (1)delay(10);
 
   // initialize neo_exec
   neo_exec_init();
+  
+#ifdef DEBUG_NO_WIFI_ONLY_LED
+  neo_exec_load(test1);
+#endif
 
+#ifndef DEBUG_NO_WIFI_ONLY_LED
   // 连接MQTTs
   randomSeed(micros());
   Serial.print("Connecting to ");
   Serial.println(AIO_SERVER);
-//
-//  Serial.println(millis());
-//  neo_exec_draw(TIME_INTV);
-//
-//  Serial.println(millis());
-//  show_frame(frame);
+#endif
   
   Serial.println(millis());
   startms = millis();
@@ -108,10 +129,12 @@ void setup() {
 }
 
 void loop() {
+#ifndef DEBUG_NO_WIFI_ONLY_LED
   if (!mqtt.connected()) {
     reconnect();
   }
   mqtt.loop();
+#endif
   
   fidx += 1;
   ms = millis();
@@ -123,20 +146,13 @@ void loop() {
   show_frame(frame);
 }
 
-// Fill the dots one after the other with a color
-void colorWipe(uint32_t c, uint8_t wait) {
-  for(uint16_t i=0; i<strip.numPixels(); i++) {
-    strip.setPixelColor(i, c);
-    strip.show();
-    delay(wait);
-  }
-}
-
 void show_frame(struct neo_color *frame) {
   for(uint16_t i=0; i<NEO_N; i++) {
-    strip.setPixelColor(i, frame[i].r, frame[i].g, frame[i].b);
+//    strip.setPixelColor(i, frame[i].r, frame[i].g, frame[i].b);
+//    pixels[i].R = frame[i].b; pixels[i].G = frame[i].r; pixels[i].B = frame[i].g;
+    pixels[i].R = frame[i].r; pixels[i].G = frame[i].g; pixels[i].B = frame[i].b;
   }
-  strip.show();
+  ledstrip.show(pixels);
 }
 
 void reconnect() {
