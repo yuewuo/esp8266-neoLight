@@ -1,0 +1,51 @@
+{
+    "version": 1,
+    "name": "测试样例2",
+    
+    "mask": 0.5,
+    "mask_start": 50,
+    "mask_end": 90,
+    "repeat": -1,
+    "procedure": [
+        {
+            "type": "frame",
+            "subtype": "gradual",
+            "data": [
+                [50, 0, 0, 0],
+                [90, 0, 0, 0]
+            ]
+        },
+        {
+            "type": "sleep",
+            "subtype": "gradual",
+            "time": 1000
+        },
+        {
+            "type": "frame",
+            "subtype": "gradual",
+            "data": [
+                [50, 0, 0, 0],
+                [80, 255, 255, 255],
+                [90, 0, 0, 0]
+            ]
+        },
+        {
+            "type": "sleep",
+            "subtype": "raw",
+            "time": 100
+        },
+        {
+            "type": "sleep",
+            "subtype": "gradual",
+            "time": 3000
+        },
+        {
+            "type": "frame",
+            "subtype": "gradual",
+            "data": [
+                [50, 0, 0, 0],
+                [90, 0, 0, 0]
+            ]
+        }
+    ]
+}

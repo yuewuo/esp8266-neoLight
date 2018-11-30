@@ -87,7 +87,9 @@
         let arr = procedures.split(';');
         // console.log(arr);
         for (let i=0; i<arr.length; ++i) { if (arr[i].length < 1) return false; }
-        return arr;
+        return arr.map((value) => {
+            return 'json/' + value;
+        });
     }
 
     function gourl() {
