@@ -21,7 +21,7 @@ if __name__ == '__main__':
     # with open(filename, 'rb') as f:
     #     client.publish("iot/" + USERNAME + "/neo/add", f.read())
 
-    client.publish("iot/" + USERNAME + "/neo/add", 
+    client.publish("iot/" + USERNAME + "/neo/set/2", 
         "1 default\n64 0 60 -1\n"
         + "fg:0 000000;60 000000\n"
         + "sg:1500\n"

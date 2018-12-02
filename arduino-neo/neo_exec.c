@@ -25,43 +25,65 @@ static int find_valid_slot() {
     return -1;
 }
 
-int neo_exec_load(const char* str) {
-    int i, version, j;
+int neo_exec_set(unsigned char* payload, int length, int slot) {
+    int version, j;
     char *ptr, *ptr2;
-    sscanf(str, "%d", &version);
-    neo_printf("version: %d\n", version);
-    ptr = strchr(str, '\n');
-    if (ptr) {
-        if (version == 1) {
-            neo_printf("load procedure of version %d\n", version);
-            i = find_valid_slot();
-            if (i >= 0) {  // 初始化工作
-                neo_printf("load procedure to slot %d\n", i);
-                // 加载名字字符串
-                ptr2 = strchr(str, ' ');
-                if (ptr2 != NULL && ptr - ptr2 < NEO_NAME_LENGTH - 2) {
-                    *ptr = '\0';
-                    strcpy(neo_slot[i].name, ptr2 + 1);
-                    *ptr = '\n';
-                    neo_printf("procedure name is: \"%s\"\n", neo_slot[i].name);
-                    if (strlen(ptr+1) < MAX_NEO_STR_LENGTH) {
-                        strcpy(neo_slot[i].str, ptr + 1);
-                        neo_slot[i].version = version;
-                        switch (version) {
-                        case 1:
-                            j = neo_exec_v1_init(i);
-                            if (j == 0) {
-                                neo_printf("procedure init success\n");
-                                neo_slot[i].valid = 1;
-                            } else { neo_printf("procedure init failed with exit code %d\n", j); return j; }
-                            break;
-                        }
-                    } else { neo_printf("procedure str too long %s %d\n", __FILE__, __LINE__); return -3; }
-                } else { neo_printf("procedure name error %s %d\n", __FILE__, __LINE__); return -4; }
-            } else { neo_printf("no more slot to put\n"); return -5; }
-        } else { neo_printf("version error %s %d\n", __FILE__, __LINE__); return -6; }
-    } else { neo_printf("format error %s %d\n", __FILE__, __LINE__); return -7; }
+
+    // 首先检查长度
+    if (length >= MAX_NEO_STR_LENGTH) { neo_printf("procedure payload too long %s %d\n", __FILE__, __LINE__); return -3; }
+
+    payload[length] = '\0';  // 保证有一个结尾
+    ptr = strchr(payload, '\n');  // 确保字符串存在第一行
+    if (ptr == NULL) { neo_printf("format error %s %d\n", __FILE__, __LINE__); return -7; }
+
+    if (slot < 0 || slot >= NEO_SLOT) { neo_printf("invalid slot number(%d)\n", slot); return -3; }
+    neo_printf("load procedure to slot %d\n", slot);
+
+    // 加载名字字符串，不管version为什么，第一行必须存在，而且为 <version> <name>\n
+    ptr2 = strchr(payload, ' ');
+    if (ptr2 == NULL || ptr - ptr2 >= NEO_NAME_LENGTH - 2) { neo_printf("procedure name error %s %d\n", __FILE__, __LINE__); return -4; }
+    *ptr2 = '\0';  // 封住空格的位置，确保读入数字
+    sscanf(payload, "%d", &version);
+    neo_slot[slot].version = version;
+    // *ptr2 = ' ';
+    *ptr = '\0';  // 封住名字的结尾
+    strcpy(neo_slot[slot].name, ptr2 + 1);
+    // *ptr = '\n';
+    neo_printf("procedure name is: \"%s\"\n", neo_slot[slot].name);
+
+    // copy content，这个很可能是二进制，长度需要计算好，不包括\n前面的version和name信息
+    neo_slot[slot].content_length = length - (ptr + 1 - (char*)payload);
+    memcpy(neo_slot[slot].content, ptr + 1, neo_slot[slot].content_length);
+    neo_slot[slot].content[neo_slot[slot].content_length] = '\0';  // 保证有结尾
+
+    switch (version) {  // 这个里面，version、name和content、content_length变量已经设置，但valid还没有设置
+        case 1:
+            j = neo_exec_v1_init(slot);
+            break;
+        case 2:
+            // TODO: @张烨实现version2解码 j = neo_exec_v2_init(slot);
+            break;
+        default:
+            neo_printf("invalid version number %d\n", version);
+            return -10;
+    }
+
+    neo_printf("load procedure of version %d\n", version);
+    if (j == 0) {
+        neo_printf("procedure init success\n");
+    } else { neo_printf("procedure init failed with exit code %d\n", j); return j; }
+
+    neo_slot[slot].valid = 1;
     return 0;
+}
+
+int neo_exec_load(unsigned char* payload, int length) {
+    int slot;
+    slot = find_valid_slot();
+    if (slot < 0) {
+        neo_printf("no more slot to put\n"); return -5;
+    }
+    return neo_exec_set(payload, length, slot);  // 直接设置这个slot
 }
 
 void neo_exec_draw(int timeintv) {

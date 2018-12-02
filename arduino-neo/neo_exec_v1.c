@@ -2,11 +2,11 @@
 
 int neo_exec_v1_init(int slot) {
     struct neo_var_v1 *v;
-    const char* str = neo_slot[slot].str;
+    const char* content = neo_slot[slot].content;
     char *ptr, *ptr2;
     v = &(neo_slot[slot].var.v1);
-    sscanf(str, "%d %d %d %d", &(v->mask), &(v->mask_start), &(v->mask_end), &(v->repeat));
-    ptr = strchr(str, '\n');
+    sscanf(content, "%d %d %d %d", &(v->mask), &(v->mask_start), &(v->mask_end), &(v->repeat));
+    ptr = strchr(content, '\n');
     if (!ptr) { neo_printf("format error %s %d\n", __FILE__, __LINE__); return 1; }
     v->orihead = v->head = ptr + 1;  // 把\n空过去
     v->sleep = 0;  // 初始化睡眠计时

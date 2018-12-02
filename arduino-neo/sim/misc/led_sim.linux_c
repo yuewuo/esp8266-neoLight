@@ -124,10 +124,8 @@ int main(int argc, char** argv) {
                         if(fd < 0) {
                             printf("Error: fail to open file %s\n\n", p[i]->filename);
                         }
-                        buf[read(fd, buf, sizeof(buf))] = '\0';
-                        close(fd);
                         printf("-----load %s:-----\n", p[i]->filename);
-                        if(neo_exec_load(buf) == 0) { //加载成功
+                        if(neo_exec_load(buf, read(fd, buf, sizeof(buf))) == 0) { //加载成功
                             valid_slots[slot] = 0; 
                             p[i]->slot = slot;
                             printf("---success! loaded at slot %d---\n\n", slot);
@@ -135,6 +133,7 @@ int main(int argc, char** argv) {
                             p[i]->slot = -1;
                             printf("------------failed!------------\n\n");
                         }
+                        close(fd);
                         neo_info(buf);
                     }
                 }

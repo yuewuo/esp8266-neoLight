@@ -54,8 +54,8 @@ struct neo_var {
     unsigned char valid;
     int version;
     char name[NEO_NAME_LENGTH];
-    char str[MAX_NEO_STR_LENGTH];  // 记录原本的字符串信息，不包括version那一行
-    int strl;  // 字符串的长度，MQTT会告知这一个内容
+    char content[MAX_NEO_STR_LENGTH];  // 记录原本的内容信息，不包括version那一行
+    int content_length;  // 字符串的长度，MQTT会告知这一个内容
     struct neo_color frame1[NEO_N];
     struct neo_color frame2[NEO_N];
     union neo_var_union var;  // 每个版本维护自己的一套实现变量
@@ -64,7 +64,8 @@ struct neo_var {
 extern struct neo_color frame[NEO_N];
 extern void neo_exec_init();
 extern struct neo_var neo_slot[NEO_SLOT];
-extern int neo_exec_load(const char* str);
+int neo_exec_load(unsigned char* payload, int length);
+int neo_exec_set(unsigned char* payload, int length, int slot);  // 制定slot number
 extern void neo_exec_draw(int timeintv);
 extern void neo_exec_frame_dump();
 extern void frame_clear(struct neo_color *frame);

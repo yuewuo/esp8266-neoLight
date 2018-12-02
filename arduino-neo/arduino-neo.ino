@@ -50,8 +50,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
       "./neo/delete <num>: delete a procedure start from index 0\n"
       "./neo/add <procedure> add a procedure using compiled string\n");
   } else if (strcmp("iot/" AIO_USERNAME "/neo/add", topic) == 0) {  // 添加一个procedure，用./neo/add_ret返回
-    payload[length] = '\0';
-    sprintf(buf, "%d", neo_exec_load((const char*)payload));
+    sprintf(buf, "%d", neo_exec_load(payload, length));
     mqtt.publish("iot/" AIO_USERNAME "/neo/add_ret", buf);
   } else if (strcmp("iot/" AIO_USERNAME "/neo/delete", topic) == 0) {  // 强行delete一个procedure，用./neo/delete_ret返回
     int slot2delete;
@@ -64,6 +63,18 @@ void callback(char* topic, byte* payload, unsigned int length) {
   } else if (strcmp("iot/" AIO_USERNAME "/neo/ask", topic) == 0) {
     neo_info(buf);
     mqtt.publish("iot/" AIO_USERNAME "/neo/info", buf);
+  } else if (strcmp("iot/" AIO_USERNAME "/neo/clear", topic) == 0) {
+    for (int i=0; i<NEO_SLOT; ++i) neo_exec_delete(i);
+    mqtt.publish("iot/" AIO_USERNAME "/neo/clear_ret", "0");
+  } else {
+    for (int i=0; i<NEO_SLOT; ++i) {
+      sprintf(buf, "iot/%s/neo/set/%d", AIO_USERNAME, i);
+      if (strcmp(buf, topic) == 0) {
+        sprintf(buf, "%d", neo_exec_set(payload, length, i));
+        mqtt.publish("iot/" AIO_USERNAME "/neo/set_ret", buf);
+        break;
+      }
+    }
   }
 //  Serial.println(length);
 }
@@ -182,6 +193,8 @@ void reconnect() {
       mqtt.subscribe("iot/" AIO_USERNAME "/neo/ask");
       mqtt.subscribe("iot/" AIO_USERNAME "/neo/delete");
       mqtt.subscribe("iot/" AIO_USERNAME "/neo/add");
+      mqtt.subscribe("iot/" AIO_USERNAME "/neo/set/+");
+      mqtt.subscribe("iot/" AIO_USERNAME "/neo/clear");
       mqtt.publish("iot/" AIO_USERNAME "/online","esp82660-neoLight");
     } else {
       Serial.print("failed, rc=");

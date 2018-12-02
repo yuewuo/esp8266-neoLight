@@ -3,3 +3,4 @@
 arduino-neo/TEST
 arduino-neo/rgb.png
 .vscode
+arduino-neo/sim/tests/*.png
