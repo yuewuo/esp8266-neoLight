@@ -11,10 +11,16 @@
 #include "neo_PubSubClient.h"
 #include "neo_exec.h"
 #include <Adafruit_NeoPixel.h>
+#ifdef ESP8266
 #include <ESP8266WiFi.h>
 #include <interrupts.h>
-
 #define NEO_PIN D1
+#endif
+#ifdef ESP32
+#include <WiFi.h>
+#define NEO_PIN 17
+#endif
+
 #define TIME_INTV 20  // ms，每一帧的间隔
 
 #define WLAN_SSID       "geeklab"
@@ -93,8 +99,17 @@ void setup() {
   
   strip.begin();
   {
-    InterruptLock lock; 
+    #ifdef ESP8266
+    InterruptLock lock;
+    #endif
+    #ifdef ESP32
+    delay(1);
+    portDISABLE_INTERRUPTS();
+    #endif 
     strip.show();
+    #ifdef ESP32
+    portENABLE_INTERRUPTS();
+    #endif 
   }
 
   // initialize neo_exec
@@ -139,8 +154,17 @@ void show_frame(struct neo_color *frame) {
     strip.setPixelColor(i, frame[i].r, frame[i].g, frame[i].b);
   }
   {
-    InterruptLock lock; 
+    #ifdef ESP8266
+    InterruptLock lock;
+    #endif
+    #ifdef ESP32
+    delay(1);
+    portDISABLE_INTERRUPTS();
+    #endif 
     strip.show();
+    #ifdef ESP32
+    portENABLE_INTERRUPTS();
+    #endif 
   }
 }
 
