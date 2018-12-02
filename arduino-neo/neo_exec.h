@@ -6,7 +6,7 @@ extern "C" {
 #include "stdio.h"
 #include "string.h"
 #define MAX_NEO_STR_LENGTH 2048
-#define NEO_N 600  // WS2812灯珠的个数，这个是编译时必需确定的
+#define NEO_N 300  // WS2812灯珠的个数，这个是编译时必需确定的
 #define NEO_SLOT 5  // 最多存储的procedure个数
 #define NEO_PRINTF 1
 #define NEO_NAME_LENGTH 32

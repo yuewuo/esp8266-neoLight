@@ -127,7 +127,7 @@ void setup() {
 #endif
   
   Serial.println(millis());
-  startms = millis();
+  startms = -1;
   fidx = 0;
 }
 
@@ -138,7 +138,8 @@ void loop() {
   }
   mqtt.loop();
 #endif
-  
+
+  if (startms < 0) startms = millis();
   fidx += 1;
   ms = millis();
   todelay = TIME_INTV * fidx + startms - ms;
