@@ -28,8 +28,10 @@
 
 #define AIO_SERVER      "onedawn.top"
 #define AIO_SERVERPORT  8883                   // 8883 for MQTTS
-#define AIO_USERNAME    "sVyd16qv"
-#define AIO_KEY         "iIJQUrn5SkwpaCqG4omyW3Tb6z7RPvBY"
+//#define AIO_USERNAME    "sVyd16qv"
+#define AIO_USERNAME "KR9OlErL"
+//#define AIO_KEY         "iIJQUrn5SkwpaCqG4omyW3Tb6z7RPvBY"
+#define AIO_KEY "GKdl1LeOMDsPS8ykt3HfhF7J49iIpT2r"
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NEO_N, NEO_PIN, NEO_GRB + NEO_KHZ800);
 WiFiClient client;
