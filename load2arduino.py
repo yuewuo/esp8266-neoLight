@@ -30,6 +30,7 @@ if __name__ == '__main__':
         + "fg:0 00FF00;60 FF0000\n"
         + "sg:1500\n"
         + "fg:0 000000;60 000000\n"
+        + "".join(["fg:0 00FF00;60 FF0000\n" for i in range(80)])
     )
 
     # client.loop_forever()
